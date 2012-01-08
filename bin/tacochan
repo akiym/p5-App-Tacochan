@@ -1,0 +1,228 @@
+#!/usr/bin/env perl
+use strict;
+use warnings;
+use 5.008001;
+use File::Spec;
+use File::Basename;
+use lib File::Spec->catdir(dirname(__FILE__), '..', 'lib');
+
+use App::Tacochan;
+use Skype::Any;
+use Getopt::Long ();
+use Pod::Usage;
+use Plack::Builder;
+use Plack::Request;
+use Plack::Response;
+use Twiggy::Server;
+
+my $parser = Getopt::Long::Parser->new(
+    config => [ "no_ignore_case", "pass_through" ],
+);
+
+my %options;
+my($http_host, $http_port) = ('127.0.0.1', 4969);
+$parser->getoptions(
+    'o|host=s'  => \$http_host,
+    'p|port=i'  => \$http_port,
+    'h|help'    => \$options{help},
+    'v|version' => \$options{version},
+);
+pod2usage(1) if $options{help};
+if ($options{version}) {
+    die "tacochan $App::Tacochan::VERSION\n";
+}
+
+my $skype = Skype::Any->new;
+
+sub render {
+    my($code, $msg) = @_;
+    my $res = Plack::Response->new($code);
+    $res->content_type('text/plain');
+    $res->content_length(length $msg);
+    $res->body($msg);
+    $res->finalize;
+}
+
+my $chats = {};
+sub join_chat {
+    my $chat = shift;
+    my $chat_obj;
+    if ($chat =~ /^#/) {
+        $chat_obj = Skype::Any::Chat->new($chat);
+        return unless $chat_obj->alter('join');
+    } else {
+        my $user = Skype::Any::User->new($chat);
+        $chat_obj = $user->chat;
+    }
+    my $id = $chat_obj->{id};
+    $chats->{$id} = {
+        join_at => time(),
+    };
+    $chat_obj;
+}
+
+my $code = sub {
+    my $req = Plack::Request->new(shift);
+    my $method = $req->method;
+    my $path = $req->path;
+
+    if ($method eq 'GET') {
+        if ($path eq '/chat_list') {
+            unless (%{ $chats }) {
+                my $res = $skype->send_command('SEARCH RECENTCHATS');
+                $res =~ s/^CHATS\s+//;
+                $chats->{$_} = {} for split /,\s+/, $res;
+            }
+            my $list = [ keys %{ $chats } ];
+            return render(200, join("\n", @$list));
+        } elsif ($path eq '/') {
+            my $base = $req->base;
+            my $html =<<HTML;
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>tacochan</title>
+<head>
+<body>
+<h1>tacochan</h1>
+
+<h2>join chat list</h2>
+<iframe src="/chat_list"></iframe>
+
+<h2>API usage</u2>
+
+<h3>chat join</h3>
+<section>
+<table border="1">
+<tr><td>method</td><td>POST</td></tr>
+<tr><td>url</td><td>${base}join</td></tr>
+<tr><td>form params</td><td>chat=#chat|user[, user, ...]</td></tr>
+</table>
+<h4>testing form</h4>
+<form action="/join" method="post">
+join chat: <input name="chat" /><input type="submit" value="join" />
+</form>
+<section>
+
+<section>
+<h3>chat leave</h3>
+<table border="1">
+<tr><td>method</td><td>POST</td></tr>
+<tr><td>url</td><td>${base}leave</td></tr>
+<tr><td>form params</td><td>chat=#chat</td></tr>
+</table>
+<form action="/leave" method="post">
+leave chat: <input name="chat" /><input type="submit" value="leave" />
+</form>
+<section>
+
+<section>
+<h3>sent message to chat</h3>
+<table border="1">
+<tr><td>method</td><td>POST</td></tr>
+<tr><td>url</td><td>${base}send</td></tr>
+<tr><td>form params</td><td>chat=#chat|user[, user, ...]&message=your_message</td></tr>
+</table>
+<form action="/send" method="post">
+chat: <input name="chat" /><br />
+message: <input name="message" /><input type="submit" value="post" />
+</form>
+</section>
+</body>
+</html>
+HTML
+
+            my $res = Plack::Response->new(200);
+            $res->content_type('text/html; charset=utf-8');
+            $res->content_length(length $html);
+            $res->body($html);
+            return $res->finalize;
+        }
+    } elsif ($method eq 'POST') {
+        my $chat = $req->param('chat');
+
+        if ($path eq '/join') {
+            return render(403, "joinned chat: $chat") if $chats->{$chat};
+            if (my $chat_obj = join_chat($chat)) {
+                return render(200, "join success chat: $chat_obj->{id}");
+            } else {
+                return render(403, "join failure chat: $chat");
+            }
+        } elsif ($path eq '/leave' || $path eq '/part') {
+            return render(404, "not joinned chat: $chat") unless $chats->{$chat};
+            my $chat_obj = Skype::Any::Chat->new($chat);
+            $chat_obj->alter('leave');
+            delete $chats->{$chat};
+            return render(200, "leave success chat: $chat_obj->{id}");
+        } elsif ($path eq '/send') {
+            my $chat_obj;
+            if (not $chats->{$chat}) {
+                $chat_obj = join_chat($chat);
+                unless ($chat_obj) {
+                    return render(403, "join failure chat: $chat");
+                }
+            } else {
+                $chat_obj = Skype::Any::Chat->new($chat);
+            }
+            my $message = $req->param('message');
+            $chat_obj->send_message($message);
+            return render(200, "message sent chat: $chat_obj->{id} $message");
+        }
+    }
+
+    return render(404, 'not found');
+};
+
+my $app = builder {
+    enable 'Plack::Middleware::AccessLog', format => 'combined';
+    $code;
+};
+
+warn "starting httpd: http://$http_host:$http_port/";
+my $twiggy = Twiggy::Server->new(
+    host => $http_host,
+    port => $http_port,
+);
+$twiggy->register_service($app);
+
+$skype->run;
+
+__END__
+
+=head1 NAME
+
+tacochan - Skype message delivery by HTTP
+
+=head1 SYNOPSIS
+
+    % tacochan
+
+=head1 OPTIONS
+
+=over 4
+
+=item -o, --host
+
+The interface a TCP based server daemon binds to. Defauts to undef,
+which lets most server backends bind the any (*) interface. This
+option doesn't mean anything if the server does not support TCP
+socket.
+
+=item -p, --port (default: 4969)
+
+The port number a TCP based server daemon listens on. Defaults to
+4969. This option doesn't mean anything if the server does not support
+TCP socket.
+
+=item -h, --help
+
+Show help for this command.
+
+=item -v, --version
+
+Show version.
+
+=back
+
+=cut
