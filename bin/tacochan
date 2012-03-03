@@ -80,56 +80,56 @@ my $code = sub {
             my $html =<<HTML;
 <!DOCTYPE html>
 <html>
-<head>
-<meta charset="UTF-8">
-<title>tacochan</title>
-<head>
-<body>
-<h1>tacochan</h1>
+    <head>
+        <meta charset="UTF-8">
+        <title>tacochan</title>
+    <head>
+    <body>
+        <h1>tacochan</h1>
 
-<h2>join chat list</h2>
-<iframe src="/chat_list"></iframe>
+        <h2>join chat list</h2>
+        <iframe src="/chat_list"></iframe>
 
-<h2>API usage</u2>
+        <h2>API usage</u2>
 
-<h3>chat join</h3>
-<section>
-<table border="1">
-<tr><td>method</td><td>POST</td></tr>
-<tr><td>url</td><td>${base}join</td></tr>
-<tr><td>form params</td><td>chat=#chat|user[, user, ...]</td></tr>
-</table>
-<h4>testing form</h4>
-<form action="/join" method="post">
-join chat: <input name="chat" /><input type="submit" value="join" />
-</form>
-<section>
+        <h3>chat join</h3>
+        <section>
+            <table border="1">
+                <tr><td>method</td><td>POST</td></tr>
+                <tr><td>url</td><td>${base}join</td></tr>
+                <tr><td>form params</td><td>chat=#chat|user[, user, ...]</td></tr>
+            </table>
+            <h4>testing form</h4>
+            <form action="/join" method="post">
+                join chat: <input name="chat" /><input type="submit" value="join" />
+            </form>
+        </section>
 
-<section>
-<h3>chat leave</h3>
-<table border="1">
-<tr><td>method</td><td>POST</td></tr>
-<tr><td>url</td><td>${base}leave</td></tr>
-<tr><td>form params</td><td>chat=#chat</td></tr>
-</table>
-<form action="/leave" method="post">
-leave chat: <input name="chat" /><input type="submit" value="leave" />
-</form>
-<section>
+        <section>
+            <h3>chat leave</h3>
+            <table border="1">
+                <tr><td>method</td><td>POST</td></tr>
+                <tr><td>url</td><td>${base}leave</td></tr>
+                <tr><td>form params</td><td>chat=#chat</td></tr>
+            </table>
+            <form action="/leave" method="post">
+                leave chat: <input name="chat" /><input type="submit" value="leave" />
+            </form>
+        </section>
 
-<section>
-<h3>sent message to chat</h3>
-<table border="1">
-<tr><td>method</td><td>POST</td></tr>
-<tr><td>url</td><td>${base}send</td></tr>
-<tr><td>form params</td><td>chat=#chat|user[, user, ...]&message=your_message</td></tr>
-</table>
-<form action="/send" method="post">
-chat: <input name="chat" /><br />
-message: <input name="message" /><input type="submit" value="post" />
-</form>
-</section>
-</body>
+        <section>
+            <h3>sent message to chat</h3>
+            <table border="1">
+                <tr><td>method</td><td>POST</td></tr>
+                <tr><td>url</td><td>${base}send</td></tr>
+                <tr><td>form params</td><td>chat=#chat|user[, user, ...]&message=your_message</td></tr>
+            </table>
+            <form action="/send" method="post">
+                chat: <input name="chat" /><br />
+                message: <input name="message" /><input type="submit" value="post" />
+            </form>
+        </section>
+    </body>
 </html>
 HTML
 
