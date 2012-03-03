@@ -32,7 +32,7 @@ if ($options{version}) {
     die "tacochan $App::Tacochan::VERSION\n";
 }
 
-my $skype = Skype::Any->new;
+my $skype = Skype::Any->new(name => 'tacochan');
 
 sub render {
     my($code, $msg) = @_;
