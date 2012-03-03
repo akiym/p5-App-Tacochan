@@ -49,7 +49,7 @@ if ($command eq 'join') {
             chat => $chat,
         },
     );
-} elsif ($command eq 'send') {
+} elsif ($command eq 'send' || $command eq 'notice' || $command eq 'privmsg') {
     my $message = shift @ARGV;
     unless ($message) {
         usage();

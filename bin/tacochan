@@ -67,7 +67,7 @@ my $code = sub {
     my $path = $req->path;
 
     if ($method eq 'GET') {
-        if ($path eq '/chat_list') {
+        if ($path eq '/chat_list' || $path eq '/channel_list') {
             unless (%{ $chats }) {
                 my $res = $skype->send_command('SEARCH RECENTCHATS');
                 $res =~ s/^CHATS\s+//;
@@ -140,7 +140,7 @@ HTML
             return $res->finalize;
         }
     } elsif ($method eq 'POST') {
-        my $chat = $req->param('chat');
+        my $chat = $req->param('chat') || $req->param('channel');
 
         if ($path eq '/join') {
             return render(403, "joinned chat: $chat") if $chats->{$chat};
@@ -155,7 +155,7 @@ HTML
             $chat_obj->alter('leave');
             delete $chats->{$chat};
             return render(200, "leave success chat: $chat_obj->{id}");
-        } elsif ($path eq '/send') {
+        } elsif ($path eq '/send' || $path eq '/notice' || $path eq '/message') {
             my $chat_obj;
             if (not $chats->{$chat}) {
                 $chat_obj = join_chat($chat);
