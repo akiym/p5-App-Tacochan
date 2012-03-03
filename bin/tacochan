@@ -68,10 +68,10 @@ my $code = sub {
 
     if ($method eq 'GET') {
         if ($path eq '/chat_list' || $path eq '/channel_list') {
-            unless (%{ $chats }) {
-                my $res = $skype->send_command('SEARCH RECENTCHATS');
-                $res =~ s/^CHATS\s+//;
-                $chats->{$_} = {} for split /,\s+/, $res;
+            my $res = $skype->send_command('SEARCH RECENTCHATS');
+            $res =~ s/^CHATS\s+//;
+            for my $chat (split /,\s+/, $res) {
+                $chats->{$chat} = {} unless exists $chats->{$chat};
             }
             my $list = [ keys %{ $chats } ];
             return render(200, join("\n", @$list));
