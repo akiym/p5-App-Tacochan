@@ -106,18 +106,6 @@ my $code = sub {
         </section>
 
         <section>
-            <h3>chat leave</h3>
-            <table border="1">
-                <tr><td>method</td><td>POST</td></tr>
-                <tr><td>url</td><td>${base}leave</td></tr>
-                <tr><td>form params</td><td>chat=#chat</td></tr>
-            </table>
-            <form action="/leave" method="post">
-                leave chat: <input name="chat" /><input type="submit" value="leave" />
-            </form>
-        </section>
-
-        <section>
             <h3>sent message to chat</h3>
             <table border="1">
                 <tr><td>method</td><td>POST</td></tr>
@@ -149,12 +137,6 @@ HTML
             } else {
                 return render(403, "join failure chat: $chat");
             }
-        } elsif ($path eq '/leave' || $path eq '/part') {
-            return render(404, "not joinned chat: $chat") unless $chats->{$chat};
-            my $chat_obj = Skype::Any::Chat->new($chat);
-            $chat_obj->alter('leave');
-            delete $chats->{$chat};
-            return render(200, "leave success chat: $chat_obj->{id}");
         } elsif ($path eq '/send' || $path eq '/notice' || $path eq '/message') {
             my $chat_obj;
             if (not $chats->{$chat}) {
