@@ -48,10 +48,10 @@ sub join_chat {
     my $chat = shift;
     my $chat_obj;
     if ($chat =~ /^#/) {
-        $chat_obj = Skype::Any::Chat->new($chat);
+        $chat_obj = $skype->chat($chat);
         return unless $chat_obj->alter('join');
     } else {
-        my $user = Skype::Any::User->new($chat);
+        my $user = $skype->user($chat);
         $chat_obj = $user->chat;
     }
     my $id = $chat_obj->{id};
@@ -68,7 +68,7 @@ my $code = sub {
 
     if ($method eq 'GET') {
         if ($path eq '/chat_list' || $path eq '/channel_list') {
-            my $res = $skype->send_command('SEARCH RECENTCHATS');
+            my $res = $skype->api->send_command('SEARCH RECENTCHATS')->reply;
             $res =~ s/^CHATS\s+//;
             for my $chat (split /,\s+/, $res) {
                 $chats->{$chat} = {} unless exists $chats->{$chat};
@@ -145,7 +145,7 @@ HTML
                     return render(403, "join failure chat: $chat");
                 }
             } else {
-                $chat_obj = Skype::Any::Chat->new($chat);
+                $chat_obj = $skype->chat($chat);
             }
             my $message = $req->param('message');
             $chat_obj->send_message($message);
