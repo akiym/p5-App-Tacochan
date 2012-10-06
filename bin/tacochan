@@ -126,7 +126,7 @@ my $code = sub {
             <table border="1">
                 <tr><td>method</td><td>POST</td></tr>
                 <tr><td>url</td><td>${base}send</td></tr>
-                <tr><td>form params</td><td>chat=#chat|user[, user, ...]&amp;essage=your_message</td></tr>
+                <tr><td>form params</td><td>chat=#chat|user[, user, ...]&amp;message=your_message</td></tr>
             </table>
             <form action="/send" method="post">
                 chat: <input name="chat" /><br />
