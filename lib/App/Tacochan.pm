@@ -8,7 +8,7 @@ __END__
 
 =head1 NAME
 
-tacochan - Skype message delivery by HTTP
+App::Tacochan - Skype message delivery by HTTP
 
 =head1 SYNOPSIS
 
