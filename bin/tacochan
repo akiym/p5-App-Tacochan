@@ -13,6 +13,7 @@ use JSON ();
 use Getopt::Long ();
 use Pod::Usage;
 use Plack::Builder;
+use Plack::Builder::Conditionals;
 use Plack::Request;
 use Plack::Response;
 use Twiggy::Server;
@@ -23,9 +24,11 @@ my $parser = Getopt::Long::Parser->new(
 
 my %options;
 my($http_host, $http_port) = ('127.0.0.1', 4969);
+my @reverse_proxy;
 $parser->getoptions(
     'o|host=s'  => \$http_host,
     'p|port=i'  => \$http_port,
+    'r|reverse-proxy=s' => \@reverse_proxy,
     'h|help'    => \$options{help},
     'v|version' => \$options{version},
 );
@@ -182,6 +185,9 @@ HTML
 };
 
 my $app = builder {
+    if ( @reverse_proxy ) {
+        enable match_if addr(\@reverse_proxy), 'Plack::Middleware::ReverseProxy';
+    }
     enable 'Plack::Middleware::AccessLog', format => 'combined';
     $code;
 };
@@ -221,6 +227,12 @@ socket.
 The port number a TCP based server daemon listens on. Defaults to
 4969. This option doesn't mean anything if the server does not support
 TCP socket.
+
+=item -r, --reverse-proxy
+
+treat X-Forwarded-For as REMOTE_ADDR if REMOTE_ADDR match this argument.
+
+see L<Plack::Middleware::ReverseProxy>.
 
 =item -h, --help
 

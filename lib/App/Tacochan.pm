@@ -31,6 +31,12 @@ The port number a TCP based server daemon listens on. Defaults to
 4969. This option doesn't mean anything if the server does not support
 TCP socket.
 
+=item -r, --reverse-proxy
+
+treat X-Forwarded-For as REMOTE_ADDR if REMOTE_ADDR match this argument.
+
+see L<Plack::Middleware::ReverseProxy>.
+
 =item -h, --help
 
 Show help for this command.
