@@ -41,4 +41,17 @@ Show version.
 
 =back
 
+=head1 SEE ALSO
+
+L<App::Ikachan>, L<Skype::Any>, L<Twiggy>
+
+=head1 AUTHOR
+
+Takumi Akiyama E<lt>t.akiym at gmail.comE<gt>
+
+=head1 LICENSE
+
+This library is free software; you can redistribute it and/or modify
+it under the same terms as Perl itself.
+
 =cut
