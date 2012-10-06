@@ -8,6 +8,8 @@ use lib File::Spec->catdir(dirname(__FILE__), '..', 'lib');
 
 use App::Tacochan;
 use Skype::Any;
+use Encode ();
+use JSON ();
 use Getopt::Long ();
 use Pod::Usage;
 use Plack::Builder;
@@ -33,32 +35,22 @@ if ($options{version}) {
 }
 
 my $skype = Skype::Any->new(name => 'tacochan');
+my $json = JSON->new->utf8->pretty;
 
 sub render {
     my($code, $msg) = @_;
+    $msg = Encode::encode_utf8($msg);
     my $res = Plack::Response->new($code);
-    $res->content_type('text/plain');
+    $res->content_type('text/plain; charset=utf-8');
     $res->content_length(length $msg);
     $res->body($msg);
     $res->finalize;
 }
 
-my $chats = {};
-sub join_chat {
-    my $chat = shift;
-    my $chat_obj;
-    if ($chat =~ /^#/) {
-        $chat_obj = $skype->chat($chat);
-        return unless $chat_obj->alter('join');
-    } else {
-        my $user = $skype->user($chat);
-        $chat_obj = $user->chat;
-    }
-    my $id = $chat_obj->{id};
-    $chats->{$id} = {
-        join_at => time(),
-    };
-    $chat_obj;
+my $recent_chats = {};
+
+sub create_chat {
+    my $stuff = shift;
 }
 
 my $code = sub {
@@ -68,49 +60,70 @@ my $code = sub {
 
     if ($method eq 'GET') {
         if ($path eq '/chat_list' || $path eq '/channel_list') {
-            my $res = $skype->api->send_command('SEARCH RECENTCHATS')->reply;
-            $res =~ s/^CHATS\s+//;
-            for my $chat (split /,\s+/, $res) {
-                $chats->{$chat} = {} unless exists $chats->{$chat};
+            my $reply = $skype->api->send_command('SEARCH RECENTCHATS')->reply;
+            $reply =~ s/^CHATS\s+//;
+            for my $chatname (split /,\s+/, $reply) {
+                unless (exists $recent_chats->{$chatname}) {
+                    my $chat = $skype->chat($chatname);
+                    my $topic = $chat->topic;
+                    $recent_chats->{$chatname} = {
+                        status  => $chat->status,
+                        members => [split /\s+/, $chat->members],
+                        $topic ? (topic => $chat->topic) : (),
+                    };
+                }
             }
-            my $list = [ keys %{ $chats } ];
-            return render(200, join("\n", @$list));
+            my $json_text = $json->encode($recent_chats);
+            my $res = Plack::Response->new(200);
+            $res->content_type('application/json; charset=utf-8');
+            $res->content_length(length $json_text);
+            $res->body($json_text);
+            return $res->finalize;
         } elsif ($path eq '/') {
             my $base = $req->base;
             my $html =<<HTML;
 <!DOCTYPE html>
 <html>
     <head>
-        <meta charset="UTF-8">
+        <meta charset="utf-8">
         <title>tacochan</title>
-    <head>
+    </head>
     <body>
         <h1>tacochan</h1>
 
-        <h2>join chat list</h2>
-        <iframe src="/chat_list"></iframe>
+        <h2>recent chats</h2>
+        <table border="1">
+            <tr><td rowspan="5">status</td><td colspan="2">chat status</td></tr>
+            <tr><td>LEGACY_DIALOG</td><td>old style IM</td></tr>
+            <tr><td>DIALOG</td><td>1:1 chat</td></tr>
+            <tr><td>MULTI_SUBSCRIBED</td><td>participant in chat</td></tr>
+            <tr><td>UNSUBSCRIBED</td><td>left chat</td></tr>
+            <tr><td>members</td><td colspan="2">all users who have been these</td></tr>
+            <tr><td>topic</td><td colspan="2">chat topic</td></tr>
+        </table>
+        <iframe src="/chat_list" width="500"></iframe>
 
-        <h2>API usage</u2>
+        <h2>API usage</h2>
 
-        <h3>chat join</h3>
         <section>
+            <h3>chat leave</h3>
             <table border="1">
                 <tr><td>method</td><td>POST</td></tr>
-                <tr><td>url</td><td>${base}join</td></tr>
-                <tr><td>form params</td><td>chat=#chat|user[, user, ...]</td></tr>
+                <tr><td>url</td><td>${base}leave</td></tr>
+                <tr><td>form params</td><td>chat=#chat</td></tr>
             </table>
-            <h4>testing form</h4>
-            <form action="/join" method="post">
-                join chat: <input name="chat" /><input type="submit" value="join" />
+            <form action="/leave" method="post">
+                leave chat: <input name="chat" /><input type="submit" value="leave" />
             </form>
-        </section>
+        <section>
+
 
         <section>
             <h3>sent message to chat</h3>
             <table border="1">
                 <tr><td>method</td><td>POST</td></tr>
                 <tr><td>url</td><td>${base}send</td></tr>
-                <tr><td>form params</td><td>chat=#chat|user[, user, ...]&message=your_message</td></tr>
+                <tr><td>form params</td><td>chat=#chat|user[, user, ...]&amp;essage=your_message</td></tr>
             </table>
             <form action="/send" method="post">
                 chat: <input name="chat" /><br />
@@ -128,28 +141,40 @@ HTML
             return $res->finalize;
         }
     } elsif ($method eq 'POST') {
-        my $chat = $req->param('chat') || $req->param('channel');
-
+        my $chatname = $req->param('chat') || $req->param('channel');
         if ($path eq '/join') {
-            return render(403, "joinned chat: $chat") if $chats->{$chat};
-            if (my $chat_obj = join_chat($chat)) {
-                return render(200, "join success chat: $chat_obj->{id}");
-            } else {
-                return render(403, "join failure chat: $chat");
+            eval {
+                $skype->chat($chatname)->alter('join');
+            };
+            if ($@) {
+                return render(403, "join failure chat: $chatname");
             }
-        } elsif ($path eq '/send' || $path eq '/notice' || $path eq '/message') {
-            my $chat_obj;
-            if (not $chats->{$chat}) {
-                $chat_obj = join_chat($chat);
-                unless ($chat_obj) {
-                    return render(403, "join failure chat: $chat");
+            return render(200, "join success chat: $chatname");
+        } elsif ($path eq '/leave' || $path eq '/part') {
+            eval {
+                $skype->chat($chatname)->alter('leave');
+            };
+            if ($@) {
+                return render(403, "leave failure chat: $chatname");
+            }
+            delete $recent_chats->{$chatname};
+            return render(200, "leave success chat: $chatname");
+        } elsif ($path eq '/send' || $path eq '/notice' || $path eq '/privmsg') {
+            my $chat = do {
+                if ($chatname =~ /^#/) {
+                    $skype->chat($chatname);
+                } else {
+                    $skype->user($chatname)->chat();
                 }
-            } else {
-                $chat_obj = $skype->chat($chat);
+            };
+            my $message = Encode::decode_utf8($req->param('message'));
+            eval {
+                $chat->send_message($message);
+            };
+            if ($@) {
+                return render(403, "message sent failure chat: $chatname $message");
             }
-            my $message = $req->param('message');
-            $chat_obj->send_message($message);
-            return render(200, "message sent chat: $chat_obj->{id} $message");
+            return render(200, "message sent chat: $chat->{id} $message");
         }
     }
 

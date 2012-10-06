@@ -21,9 +21,8 @@ $parser->getoptions(
 
 sub usage {
     print "tacochan_client
-$0 [-s tacochan_server] join #chat
 $0 [-s tacochan_server] leave #chat
-$0 [-s tacochan_server] send #chat message
+$0 [-s tacochan_server] send #chat|user[, user, ...] message
 ";
 }
 
@@ -81,14 +80,11 @@ tacochan - Skype message delivery by HTTP
 
 =head1 SYNOPSIS
 
-  # join chat
-  tacochan -s http://127.0.0.1:4969/ join \#chat
-
   # leave chat
   tacochan -s http://127.0.0.1:4969/ leave \#chat
 
   # sent message
-  tacochan -s http://127.0.0.1:4969/ send \#chat message
+  tacochan -s http://127.0.0.1:4969/ send \#chat|user[, user, ...] message
 
 =head1 OPTIONS
 
