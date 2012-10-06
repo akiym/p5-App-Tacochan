@@ -1,4 +1,7 @@
 Revision history for Perl extension App::Tacochan
 
-0.01    Sun Jan  8 02:58:40 2012
+0.02
+        - fix pod section
+
+0.01
         - original version
