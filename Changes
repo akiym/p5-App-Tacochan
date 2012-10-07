@@ -1,5 +1,11 @@
 Revision history for Perl extension App::Tacochan
 
+0.03
+        - tacochan_client added to installation script
+        - remove trash
+        - fix pod section
+        - fix typo
+
 0.02
         - fix pod section
 
