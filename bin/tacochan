@@ -52,10 +52,6 @@ sub render {
 
 my $recent_chats = {};
 
-sub create_chat {
-    my $stuff = shift;
-}
-
 my $code = sub {
     my $req = Plack::Request->new(shift);
     my $method = $req->method;
