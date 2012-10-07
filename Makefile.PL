@@ -16,6 +16,7 @@ tests 't/*.t';
 author_tests 'xt';
 
 install_script 'bin/tacochan';
+install_script 'bin/tacochan_client';
 
 auto_set_repository;
 
