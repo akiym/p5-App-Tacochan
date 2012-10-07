@@ -7,6 +7,7 @@ all_from 'lib/App/Tacochan.pm';
 
 requires 'Skype::Any' => '0.03';
 requires 'Twiggy';
+requires 'JSON' => '2.53';
 requires 'Plack::Middleware::ReverseProxy';
 requires 'Plack::Builder::Conditionals';
 
