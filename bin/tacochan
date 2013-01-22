@@ -10,6 +10,7 @@ use App::Tacochan;
 use Skype::Any;
 use Encode ();
 use JSON ();
+use URI;
 use Getopt::Long ();
 use Pod::Usage;
 use Plack::Builder;
@@ -48,6 +49,21 @@ sub render {
     $res->content_length(length $msg);
     $res->body($msg);
     $res->finalize;
+}
+
+sub get_chat {
+    my ($stuff) = @_;
+    if ($stuff =~ /^#/) {
+        $skype->chat($chatname);
+    } elsif ($chatname =~ /^skype:/) {
+        # from "/get uri"
+        my %query = URI->new($chatname)->query_form();
+        my @reply = $skype->api->send_command("CHAT FINDUSINGBLOB $query{blob}")->split_reply();
+        $skype->chat($reply[1]);
+    } else {
+        # from username
+        $skype->user($chatname)->chat();
+    }
 }
 
 my $recent_chats = {};
@@ -122,7 +138,8 @@ my $code = sub {
             <table border="1">
                 <tr><td>method</td><td>POST</td></tr>
                 <tr><td>url</td><td>${base}send</td></tr>
-                <tr><td>form params</td><td>chat=#chat|user[, user, ...]&amp;message=your_message</td></tr>
+                <tr><td>form params</td><td>chat=#chat|skype:|user[, user, ...]&amp;message=your_message</td></tr>
+                <tr><td>Note that if you want to get Skype URI (skype:), please send to the chat: "/get uri"</td></tr>
             </table>
             <form action="/send" method="post">
                 chat: <input name="chat" /><br />
@@ -142,16 +159,18 @@ HTML
     } elsif ($method eq 'POST') {
         my $chatname = $req->param('chat') || $req->param('channel');
         if ($path eq '/join') {
+            my $chat = get_chat($chatname);
             eval {
-                $skype->chat($chatname)->alter('join');
+                $chat->alter('join');
             };
             if ($@) {
                 return render(403, "join failure chat: $chatname");
             }
             return render(200, "join success chat: $chatname");
         } elsif ($path eq '/leave' || $path eq '/part') {
+            my $chat = get_chat($chatname);
             eval {
-                $skype->chat($chatname)->alter('leave');
+                $chat->alter('leave');
             };
             if ($@) {
                 return render(403, "leave failure chat: $chatname");
@@ -159,13 +178,7 @@ HTML
             delete $recent_chats->{$chatname};
             return render(200, "leave success chat: $chatname");
         } elsif ($path eq '/send' || $path eq '/notice' || $path eq '/privmsg') {
-            my $chat = do {
-                if ($chatname =~ /^#/) {
-                    $skype->chat($chatname);
-                } else {
-                    $skype->user($chatname)->chat();
-                }
-            };
+            my $chat = get_chat($chatname);
             my $message = Encode::decode_utf8($req->param('message'));
             eval {
                 $chat->send_message($message);
