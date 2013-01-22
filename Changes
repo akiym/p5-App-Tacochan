@@ -1,5 +1,8 @@
 Revision history for Perl extension App::Tacochan
 
+0.04    Tue Jan 22 23:32:59 2013
+        - support Skype URI
+
 0.03
         - tacochan_client added to installation script
         - remove trash
