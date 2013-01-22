@@ -54,15 +54,15 @@ sub render {
 sub get_chat {
     my ($stuff) = @_;
     if ($stuff =~ /^#/) {
-        $skype->chat($chatname);
-    } elsif ($chatname =~ /^skype:/) {
+        $skype->chat($stuff);
+    } elsif ($stuff =~ /^skype:/) {
         # from "/get uri"
-        my %query = URI->new($chatname)->query_form();
+        my %query = URI->new($stuff)->query_form();
         my @reply = $skype->api->send_command("CHAT FINDUSINGBLOB $query{blob}")->split_reply();
         $skype->chat($reply[1]);
     } else {
         # from username
-        $skype->user($chatname)->chat();
+        $skype->user($stuff)->chat();
     }
 }
 
@@ -139,7 +139,7 @@ my $code = sub {
                 <tr><td>method</td><td>POST</td></tr>
                 <tr><td>url</td><td>${base}send</td></tr>
                 <tr><td>form params</td><td>chat=#chat|skype:|user[, user, ...]&amp;message=your_message</td></tr>
-                <tr><td>Note that if you want to get Skype URI (skype:), please send to the chat: "/get uri"</td></tr>
+                <tr><td></td><td>Note that if you want to get Skype URI (skype:), please send to the chat: "/get uri"</td></tr>
             </table>
             <form action="/send" method="post">
                 chat: <input name="chat" /><br />
