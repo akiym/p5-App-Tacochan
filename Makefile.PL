@@ -5,12 +5,16 @@ use Module::Install::Repository;
 name 'App-Tacochan';
 all_from 'lib/App/Tacochan.pm';
 
+perl_version_from 'bin/tacochan';
+
 requires 'Skype::Any' => '0.03';
+requires 'Amon2::Lite' => '0.09';
 requires 'Twiggy';
 requires 'JSON' => '2.53';
 requires 'URI' => '1.60';
-requires 'Plack::Middleware::ReverseProxy';
+requires 'Plack';
 requires 'Plack::Builder::Conditionals';
+requires 'Plack::Middleware::ReverseProxy';
 
 test_requires 'Test::More' => 0.98;
 

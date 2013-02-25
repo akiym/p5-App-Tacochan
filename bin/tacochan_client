@@ -1,22 +1,18 @@
-#!/usr/bin/env perl
+#!perl
 use strict;
 use warnings;
 use 5.008001;
-use File::Spec;
-use File::Basename;
-use lib File::Spec->catdir(dirname(__FILE__), '..', 'lib');
-
 use App::Tacochan;
 use Getopt::Long ();
 use LWP::UserAgent;
 
 my $parser = Getopt::Long::Parser->new(
-    config => [ "no_ignore_case", "pass_through" ],
+    config => ['no_ignore_case', 'pass_through'],
 );
 
 my $tacochan_server = 'http://127.0.0.1:4969/';
 $parser->getoptions(
-    's|server=s'     => \$tacochan_server,
+    's|server=s' => \$tacochan_server,
 );
 
 sub usage {
@@ -34,21 +30,14 @@ unless ($chat) {
 }
 
 my @params;
-if ($command eq 'join') {
-    @params = (
-        "${tacochan_server}join",
-        +{
-            chat => $chat,
-        },
-    );
-} elsif ($command eq 'leave') {
+if ($command =~ /^leave|part$/) {
     @params = (
         "${tacochan_server}leave",
         +{
             chat => $chat,
         },
     );
-} elsif ($command eq 'send' || $command eq 'notice' || $command eq 'privmsg') {
+} elsif ($command =~ /^send|notice|privmsg$/) {
     my $message = shift @ARGV;
     unless ($message) {
         usage();
