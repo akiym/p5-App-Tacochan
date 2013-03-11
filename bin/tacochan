@@ -220,6 +220,10 @@ __DATA__
                         <td class="name">url</td>
                         <td><code>[% c().req.base %]chat_list</code></td>
                     </tr>
+                    <tr>
+                        <td class="name">Content-Type</td>
+                        <td><code>application/json; charset=utf-8</code></td>
+                    </tr>
                 </table>
                 <p>Responds a list of recent chats as JSON (see below).</p>
                 <table class="table table-bordered">
