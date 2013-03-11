@@ -116,6 +116,18 @@ post qr!^/(?:send|notice|privmsg)$! => sub {
     return $c->render_text(200, "message sent chat: $chat_obj->{id} $message");
 };
 
+get '/chat_id' => sub {
+    my ($c) = @_;
+    unless ($skype->api->is_running) {
+        return $c->render_text(500, 'Skype is not running');
+    }
+
+    my $chat = $c->req->param('chat');
+
+    my $chat_obj = $c->guess_chat($chat);
+    return $c->render_text(200, "$chat_obj->{id}");
+};
+
 __PACKAGE__->load_plugin('Web::JSON');
 
 my $parser = Getopt::Long::Parser->new(
@@ -277,6 +289,28 @@ __DATA__
                     <pre>skype:?chat&amp;lob=LsgqqqCTpxWYjt9PL1hSvGDOiPhqUuQAHxI7w7Qu7gJ3VZv_q_99ZJO4lF9Dfaw</pre>
                     <p>Passes Skype URI to <code>chat</code> parameter. Note that if you want to get Skype URI (skype:), you need to send this message to the chat: <code>/get uri</code></p>
                 </section>
+                <h3><a id="docsChatID">Chat ID</a></h3>
+                <table class="table table-bordered">
+                    <tr>
+                        <td class="name">method</td>
+                        <td><code>GET</code></td>
+                    </tr>
+                    <tr>
+                        <td class="name">url</td>
+                        <td><code>[% c().req.base %]chat_id</code></td>
+                    </tr>
+                    <tr>
+                        <td class="name">form params</td>
+                        <td>
+                            <code>chat=skype:|user[, user, ...]</code>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="name">Content-Type</td>
+                        <td><code>text/plain; charset=utf-8</code></td>
+                    </tr>
+                </table>
+                <p>Responds chat_id from Skype URI or username (chat_id is like this: <code>#anappo2/$d936403094338dbb</code>)</p>
             </div>
         </div>
     </article>

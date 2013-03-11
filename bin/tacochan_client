@@ -5,6 +5,7 @@ use 5.008001;
 use App::Tacochan;
 use Getopt::Long ();
 use LWP::UserAgent;
+use HTTP::Request::Common;
 
 my $parser = Getopt::Long::Parser->new(
     config => ['no_ignore_case', 'pass_through'],
@@ -19,6 +20,7 @@ sub usage {
     print "tacochan_client
 $0 [-s tacochan_server] leave #chat
 $0 [-s tacochan_server] send #chat|user[, user, ...] message
+$0 [-s tacochan_server] chat_id user[, user, ...]
 ";
 }
 
@@ -29,27 +31,28 @@ unless ($chat) {
     exit;
 }
 
-my @params;
+my $req;
 if ($command =~ /^leave|part$/) {
-    @params = (
-        "${tacochan_server}leave",
+    $req = POST "${tacochan_server}leave",
         +{
             chat => $chat,
-        },
-    );
+        };
 } elsif ($command =~ /^send|notice|privmsg$/) {
     my $message = shift @ARGV;
     unless ($message) {
         usage();
         exit;
     }
-    @params = (
-        "${tacochan_server}send",
+    $req = POST "${tacochan_server}send",
         +{
             chat => $chat,
             message => $message,
-        },
-    );
+        };
+} elsif ($command eq 'chat_id') {
+    $req = GET "${tacochan_server}chat_id",
+        +{
+            chat => $chat,
+        };
 } else {
     usage();
     exit;
@@ -58,7 +61,7 @@ if ($command =~ /^leave|part$/) {
 my $ua = LWP::UserAgent->new(
     agent => "TacochanClient/$App::Tacochan::VERSION",
 );
-my $res = $ua->post(@params);
+my $res = $ua->request($req);
 print $res->content . "\n";
 
 __END__
