@@ -54,7 +54,7 @@
             "Plack" : "0",
             "Plack::Builder::Conditionals" : "0",
             "Plack::Middleware::ReverseProxy" : "0",
-            "Skype::Any" : "0.03",
+            "Skype::Any" : "0.04",
             "Twiggy" : "0",
             "URI" : "1.60",
             "perl" : "5.008001"
@@ -73,7 +73,7 @@
          "web" : "https://github.com/akiym/p5-App-Tacochan"
       }
    },
-   "version" : "0.06",
+   "version" : "0.07",
    "x_contributors" : [
       "Takumi Akiyama <t.akiym@gmail.com>"
    ]
