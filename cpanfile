@@ -3,7 +3,7 @@ requires 'JSON', '2.53';
 requires 'Plack';
 requires 'Plack::Builder::Conditionals';
 requires 'Plack::Middleware::ReverseProxy';
-requires 'Skype::Any', '0.03';
+requires 'Skype::Any', '0.04';
 requires 'Twiggy';
 requires 'URI', '1.60';
 requires 'perl', '5.008001';

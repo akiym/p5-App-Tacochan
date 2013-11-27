@@ -161,6 +161,8 @@ my $app = builder {
     );
 };
 
+$skype->attach;
+
 warn "starting httpd: http://$http_host:$http_port/\n";
 my $twiggy = Twiggy::Server->new(
     host => $http_host,
